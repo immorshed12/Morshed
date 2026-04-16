@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A product available for sale",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "unit": { "type": "string" },
+        "price": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "unit", "price"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "A sales record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNumber": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerAddress": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "dueAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["Paid", "Due", "Partial"] },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["invoiceNumber", "date", "items", "subtotal", "status"]
+    },
+    "ShortlistItem": {
+      "title": "Shortlist Item",
+      "description": "An item to be purchased",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "quantity": { "type": "string" },
+        "unit": { "type": "string" },
+        "note": { "type": "string" },
+        "isDone": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "Meta": {
+      "title": "Meta",
+      "description": "Metadata for the application",
+      "type": "object",
+      "properties": {
+        "invoiceCounter": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of products"
+    },
+    "/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "Collection of sales invoices"
+    },
+    "/shortlist/{itemId}": {
+      "schema": "ShortlistItem",
+      "description": "Collection of shortlist items"
+    },
+    "/meta/settings": {
+      "schema": "Meta",
+      "description": "Application settings and counters"
+    }
+  }
+}

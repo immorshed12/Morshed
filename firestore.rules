@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: products
+    // Fields: id, name, unit, price, createdAt
+    //
+    // Collection: invoices
+    // Fields: id, invoiceNumber, date, customerName, customerPhone, customerAddress, items, subtotal, paidAmount, dueAmount, status, createdBy
+    //
+    // Collection: shortlist
+    // Fields: id, name, quantity, unit, note, isDone, createdAt
+    //
+    // Collection: meta
+    // Fields: invoiceCounter
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         request.auth.token.email == "immorshed068@gmail.com");
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.unit is string && data.unit.size() > 0 && data.unit.size() < 20 &&
+             data.price is number && data.price >= 0;
+    }
+
+    function isValidInvoice(data) {
+      return data.invoiceNumber is number &&
+             data.items is list && data.items.size() > 0 &&
+             data.subtotal is number && data.subtotal >= 0 &&
+             data.status in ['Paid', 'Due', 'Partial'];
+    }
+
+    function isValidShortlistItem(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.isDone is bool;
+    }
+
+    function isValidUser(data) {
+      return data.name is string && data.name.size() > 0 &&
+             data.email is string && data.email.size() > 0 &&
+             data.role in ['admin', 'staff'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == 'staff';
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role) || isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidProduct(request.resource.data);
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidInvoice(request.resource.data);
+      allow update: if isAuthenticated() && isValidInvoice(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /shortlist/{itemId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidShortlistItem(request.resource.data);
+    }
+
+    match /meta/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+  }
+}
